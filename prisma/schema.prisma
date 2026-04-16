@@ -1,0 +1,140 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         String    @default("author")
+  postCount    Int       @default(0) @map("post_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  avatar           String?
+  failedLoginCount Int      @default(0) @map("failed_login_count")
+   lockedUntil      DateTime? @map("locked_until")
+
+  posts        Post[]
+  comments     Comment[]
+  apiKeys      ApiKey[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+
+model Post {
+  id          Int        @id @default(autoincrement())
+  title       String
+  slug        String     @unique
+  content     String
+  status      String     @default("DRAFT")
+  viewCount   Int        @default(0) @map("view_count")
+  authorId    Int        @map("author_id")
+  publishedAt DateTime?  @map("published_at")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categories  PostCategory[]
+  tags        PostTag[]
+  comments    Comment[]
+
+  @@map("posts")
+}
+
+model Category {
+  id       Int        @id @default(autoincrement())
+  name     String
+  slug     String     @unique
+  parentId Int?       @map("parent_id")
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  posts    PostCategory[]
+
+  @@map("categories")
+}
+
+model PostCategory {
+  postId     Int @map("post_id")
+  categoryId Int @map("category_id")
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([postId, categoryId])
+  @@map("post_categories")
+}
+
+model Tag {
+  id    Int       @id @default(autoincrement())
+  name  String    @unique
+
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId Int @map("post_id")
+  tagId  Int @map("tag_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  userId    Int       @map("user_id")
+  content   String
+  status    String    @default("PENDING")
+  parentId  Int?      @map("parent_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id])
+  replies  Comment[] @relation("CommentThread")
+
+  @@map("comments")
+}
+
+model ApiKey {
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @map("user_id")
+  keyPrefix          String    @map("key_prefix")
+  keyHash            String    @map("key_hash")
+  name               String    @default("Default Project")
+  status             String    @default("active")
+  plan               String    @default("free")
+  monthlyQuota       Int       @default(100) @map("monthly_quota")
+  requestsThisMonth  Int       @default(0) @map("requests_this_month")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  lastUsedAt         DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("api_keys")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    Int      @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
