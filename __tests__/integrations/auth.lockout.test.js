@@ -88,7 +88,7 @@ describe('Account Lockout Flow (Integration)', () => {
         password: 'correct-horse-battery-staple'
       });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(999);
     expect(res.body.accessToken).toBeDefined();
 
     const res2 = await request(app)
