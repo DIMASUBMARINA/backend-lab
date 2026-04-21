@@ -41,14 +41,16 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
       
-    - name: Setup test database
-      run: |
-        echo "DATABASE_URL=postgresql://lab_user:testpass@localhost:5432/backend_lab_test" >> $GITHUB_ENV
-        echo "JWT_SECRET=ci-test-secret-not-for-production" >> $GITHUB_ENV
-        echo "NODE_ENV=test" >> $GITHUB_ENV
-        
     - name: Run Prisma migrations
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NODE_ENV: test
       run: npx prisma migrate deploy
       
     - name: Run integration tests
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        NODE_ENV: test
       run: npm test
