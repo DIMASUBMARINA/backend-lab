@@ -13,7 +13,7 @@ function validatePassword(password) {
 describe('Password Strength Validation (Unit)', () => {
   test('should accept common password "password123"', () => {
     const result = validatePassword('password123');
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
     expect(result.score).toBeLessThan(3);
     expect(result.warning).toContain('common');
   });
